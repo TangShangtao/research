@@ -1,7 +1,6 @@
 pyenv/
 __pycache__/
 *.py[cod]
-db/cache/
 .idea/
 .vscode/
 cache/*

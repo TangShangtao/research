@@ -2,7 +2,6 @@
 原始数据落库
 """
 
-# from xtquant import xtdata
 import db
 import polars as pl
 from typing import Sequence
@@ -96,16 +95,58 @@ def future_tick_csv_to_ck(
         db.engine.FUTURE_DB_ORIGIN.insert_df(db.table.FUTURE_TICK, csv_df_clean.to_pandas())
 
 
-def future_tick_to_future_rb_tick():
+
+def future_tick_to_future_main_tick(
+        symbol_type
+):
     """
-    future_tick表中rb数据写入rb专门的表
+    future_tick表中数据写入主力tick
+    取昨日累计turnover最大的合约为主力
     :return:
     """
-    pl.read_database(
-        f"""
-        SELECT *
-        FROM {db.table.FUTURE_TICK}
-        """,
-        db.engine.FUTURE_DB,
-        iter_batches=True,
-    )
+    trading_days = (
+        pl.read_database(
+            f"""
+            SELECT distinct trading_day
+            FROM {db.table.FUTURE_TICK}
+            ORDER BY trading_day asc
+            """,
+            db.engine.FUTURE_DB
+        )
+    ).with_columns(pl.col("trading_day").shift(1).fill_null(strategy="backward").alias("pre_trading_day"))
+
+    for row in tqdm.tqdm(trading_days.to_dicts()):
+        trading_day = row["trading_day"]
+        pre_trading_day = row["pre_trading_day"]
+        main_symbol = (
+            pl.read_database(
+                f"""
+                    SELECT symbol, turnover
+                    FROM {db.table.FUTURE_TICK}
+                    WHERE trading_day = '{pre_trading_day}'
+                    ORDER BY symbol ASC, tick_time DESC
+                    LIMIT 1 BY symbol
+                    """,
+                db.engine.FUTURE_DB,
+            )
+            .top_k(1, by="turnover")["symbol"][0]
+        )
+        main_symbol_tick = (
+            pl.read_database(
+                f"""
+                SELECT * 
+                FROM {db.table.FUTURE_RB_TICK}
+                WHERE trading_day = '{trading_day}'
+                AND symbol = '{main_symbol}'
+                """,
+                db.engine.FUTURE_DB,
+            )
+            .with_columns(
+                pl.col("tick_time").dt.replace_time_zone("Asia/Shanghai"),
+            )
+        )
+        db.engine.FUTURE_DB_ORIGIN.insert_df(db.table.FUTURE_MAIN_TICK, main_symbol_tick.to_pandas())
+
+
+
+

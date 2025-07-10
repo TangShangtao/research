@@ -9,3 +9,11 @@ FUTURE_DB_ORIGIN = clickhouse_connect.get_client(
     password="Tt1234567890",
     database="future"
 )
+BACKTEST_DB = sqlalchemy.create_engine("clickhouse://default:Tt1234567890@172.30.115.157:8123/backtest")
+BACKTEST_DB_ORIGIN = clickhouse_connect.get_client(
+    host="172.30.115.157",
+    port=8123,
+    user="default",
+    password="Tt1234567890",
+    database="backtest"
+)
