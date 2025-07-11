@@ -28,12 +28,12 @@ account = pl.DataFrame([{
     "margin":0,
     "available":initial_capital
 }])
-
-for rb_main_tick in market_data.read_rb_main_tick(start_trading_day, end_trading_day, "1mo"):
-    factor = research.factors.tick_to_min1.orderbook_imbalance(rb_main_tick)
+data_iter, data_len = market_data.read_tick(start_trading_day, end_trading_day, "AP", "1mo")
+for tick in tqdm(data_iter, total=data_len):
+    factor = research.factors.tick_to_min1.orderbook_imbalance(tick)
     break
 
-main_min1 = market_data.read_future_main_min1(start_trading_day, end_trading_day)
+main_min1 = market_data.read_main_min1(start_trading_day, end_trading_day)
 
 test = (
     factor

@@ -22,6 +22,9 @@ __TRADING_DAY = pl.read_database(
     schema_overrides={"night_trading":pl.Boolean}
 )
 
+def trading_days() -> pl.DataFrame:
+    return __TRADING_DAY
+
 def pre_trading_day(
         trading_day: dt.date,
         gap: int = 1

@@ -6,10 +6,10 @@ import polars as pl
 import datetime as dt
 import tqdm
 
-def rb_future_main_tick_to_main_min1(
+def future_main_tick_to_main_min1(
 ) -> None:
     """
-    rb期货主力tick数据合成为rb主力1分钟数据
+    期货主力tick数据合成为主力1分钟数据
     :return:
     """
     trading_days = pl.read_database(
@@ -58,6 +58,3 @@ def rb_future_main_tick_to_main_min1(
         )
         db.engine.FUTURE_DB_ORIGIN.insert_df(db.table.FUTURE_MAIN_MIN1, min.to_pandas())
 
-
-if __name__ == "__main__":
-    rb_future_main_tick_to_main_min1()
