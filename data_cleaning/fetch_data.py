@@ -4,11 +4,11 @@
 
 import db
 import polars as pl
-from typing import Sequence
-import datetime as dt
+from public import future_basic_info
 import os
 import zipfile
 import tqdm
+import re
 
 def zip_baiduyun_tick_file(
         path: str= "E:\\BaiduNetdiskDownload",
@@ -26,24 +26,32 @@ def zip_baiduyun_tick_file(
 def future_tick_csv_to_ck(
         path: str= "E:\\BaiduNetdiskDownload",
         year: str = "2011",
-        symbol_type: str="rb"
 ) -> None:
     """
     百度云期货tick csv数据入库, 只落库rb
     :param path: 百度云下载文件路径
     :param year: 年份
-    :param symbol_type: 品种
     :return:
     """
-    trading_day_dirs = os.listdir(os.path.join(path, year))
-    symbol_type_csvs = []
-    for trading_day_dir in trading_day_dirs:
-        symbol_csvs = os.listdir(os.path.join(path, year, trading_day_dir))
-        for symbol_csv in symbol_csvs:
-            if symbol_csv.startswith(symbol_type):
-                symbol_type_csvs.append(os.path.join(path, year, trading_day_dir, symbol_csv))
-    for csv in tqdm.tqdm(symbol_type_csvs):
-        csv_df = pl.read_csv(csv)
+    csv_detail = []
+    root = os.path.join(path, year)
+    trading_days = os.listdir(root)
+    for trading_day_str in trading_days:
+        daily_csvs = os.listdir(os.path.join(root, trading_day_str))
+        for daily_csv in daily_csvs:
+            symbol_type = re.sub(r'\d+',"", daily_csv.split(".")[0])
+            sub_month = re.findall(r"\d+", daily_csv)[0]
+            if len(sub_month) == 3:
+                sub_month = year[-2] + sub_month
+            csv_detail.append({
+                "symbol_type": symbol_type,
+                "symbol": symbol_type + sub_month,
+                "abs_path": os.path.join(root, trading_day_str, daily_csv),
+            })
+    csv_detail = pl.DataFrame(csv_detail)
+
+    for symbol_type, symbol, abs_path in tqdm.tqdm(csv_detail.iter_rows()):
+        csv_df = pl.read_csv(abs_path)
         # 考虑夜盘时间, 没有考虑郑商所合约名称
         csv_df_clean = (
             csv_df
@@ -67,13 +75,13 @@ def future_tick_csv_to_ck(
                 .alias("tick_time"),
 
                 pl.col("TradingDay").cast(pl.String).str.strptime(pl.Date, "%Y%m%d"),
-                pl.col("InstrumentID").str.replace_all(r"\d+", "").alias("symbol_type"),
+                pl.lit(symbol_type).alias("symbol_type"),
+                pl.lit(symbol).alias("symbol"),
                 pl.col("InstrumentID").alias("exchange_symbol"),
                 pl.lit("SHFE").alias("exchange")
             )
             .rename({
                 "TradingDay": "trading_day",
-                "InstrumentID": "symbol",
                 "LastPrice": "last_price",
                 "Volume": "volume",
                 "BidPrice1": "bid_price1",
@@ -146,7 +154,6 @@ def future_tick_to_future_main_tick(
             )
         )
         db.engine.FUTURE_DB_ORIGIN.insert_df(db.table.FUTURE_MAIN_TICK, main_symbol_tick.to_pandas())
-
 
 
 
