@@ -21,7 +21,8 @@ engine.FUTURE_DB_ORIGIN.command(
         close_today_ratio_by_money Float64 NOT NULL,
         close_today_ratio_by_volume Float64 NOT NULL,
         open_ratio_by_money Float64 NOT NULL,
-        open_ratio_by_volume Float64 NOT NULL
+        open_ratio_by_volume Float64 NOT NULL,
+        margin_rate Float64 NOT NULL
     )
     ENGINE = MergeTree
     ORDER BY symbol_type

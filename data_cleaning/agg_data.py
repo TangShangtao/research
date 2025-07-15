@@ -24,7 +24,7 @@ def future_main_tick_to_main_min1(
         tick = pl.read_database(
             f"""
             SELECT * 
-            FROM {db.table.FUTURE_RB_MAIN_TICK}
+            FROM {db.table.FUTURE_MAIN_TICK}
             WHERE trading_day = '{trading_day}'
             ORDER BY tick_time ASC
             """,

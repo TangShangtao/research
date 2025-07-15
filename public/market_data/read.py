@@ -6,12 +6,14 @@ import typing
 
 def read_main_min1(
         start_trading_day: dt.date,
-        end_trading_day: dt.date
+        end_trading_day: dt.date,
+        symbol_type: str
 ) -> pl.DataFrame:
     """
     读取期货主力1分钟bar
     :param start_trading_day: 开始日期
     :param end_trading_day: 结束日期
+    :param symbol_type: 品种
     :return: 期货主力1分钟bar
     """
     return pl.read_database(
@@ -23,6 +25,8 @@ def read_main_min1(
             trading_day >= '{start_trading_day}'
         AND 
             trading_day <= '{end_trading_day}'
+        AND 
+            symbol_type = '{symbol_type}'
         ORDER BY trading_day ASC, bar_time ASC
         """,
         db.engine.FUTURE_DB
