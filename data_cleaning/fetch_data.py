@@ -149,9 +149,7 @@ def future_tick_to_future_main_tick(
             f"""
             SELECT distinct trading_day
             FROM {db.table.FUTURE_TICK}
-            WHERE toYear(trading_day) = '{year}'
-            AND trading_day >= '2021-06-17'
-            ORDER BY trading_day ASC
+            ORDER BY trading_day asc
             """,
             db.engine.FUTURE_DB
         )
